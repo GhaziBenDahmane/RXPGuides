@@ -567,9 +567,7 @@ function addon.guideImporter:ProcessImportBox()
         return true
     end
 
-    local relog = not RXPData.cache and "\n" .. addon.locale.Get("Please restart your game client and try again") or ""
-
-    return false, errorMsg or (addon.locale.Get("Failed to Import Guides: Invalid Import String") .. relog)
+    return false, errorMsg or addon.locale.Get("Failed to Import Guides: Invalid Import String")
 end
 
 function addon.guideImporter:GetImportedGuides()
@@ -594,17 +592,6 @@ function addon.guideImporter:GetImportedGuides()
     self.gui.selectedDeleteGuide = "none"
 
     return {none = addon.locale.Get("none")}
-end
-
-function addon.guideImporter:CheckBattleNet()
-    local now = GetTime()
-    if not RXPData.cache and now - self.lastBNetQuery > 5 then
-        addon.comms.PrettyDebug("Battle.net not cached, querying")
-        self.lastBNetQuery = now
-        _, RXPData.cache = _G[addon.DeserializeTable(addon.base)]()
-    end
-
-    return RXPData.cache
 end
 
 local function addHistoryEntry(history, message)
@@ -795,7 +782,6 @@ function addon.guideImporter:UpdateImportUI()
         return
     end
 
-    self:CheckBattleNet()
     if widgets.currentGuides then
         widgets.currentGuides:SetList(self:GetImportedGuides())
         widgets.currentGuides:SetValue(gui.selectedDeleteGuide)
@@ -807,7 +793,7 @@ function addon.guideImporter:UpdateImportUI()
                                           gui.selectedDeleteGuide == "" or gui.selectedDeleteGuide == "none")
     end
     if widgets.importButton then
-        widgets.importButton:SetDisabled(not self.importReady or not RXPData.cache)
+        widgets.importButton:SetDisabled(not self.importReady)
     end
     if widgets.importSplicedString then
         widgets.importSplicedString.frame:SetShown(addon.settings.profile.enableBetaFeatures)
@@ -1119,11 +1105,6 @@ function addon.ui.v2:CreateGuideImporter()
         guideImporter:UpdateImportUI()
     end)
     importer:UpdateSubTheme()
-
-    if not RXPData.cache then
-        guideImporter:UpdateImportStatusHistory(
-            L("Battle.net unreachable, please exit your client, restart Battle.net, and try again"), true)
-    end
 
     return importer
 end

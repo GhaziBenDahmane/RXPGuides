@@ -426,20 +426,6 @@ local function CheckDataIntegrity(str, h1, mode, yieldImport)
     end
 
     local compressed = table.concat(buffer)
-    -- Reject likely account mismatches before passing data to the native decoder.
-    local compressedLength = #compressed
-    local cmf, flg = strbyte(compressed, 1, 2)
-    local checksum = compressedLength >= 8 and
-                     strbyte(compressed, compressedLength - 3) * 0x1000000 +
-                     strbyte(compressed, compressedLength - 2) * 0x10000 +
-                     strbyte(compressed, compressedLength - 1) * 0x100 +
-                     strbyte(compressed, compressedLength)
-
-    if not checksum or bitand(cmf, 0xf) ~= 8 or cmf > 0x78 or
-        bitand(flg, 0x20) ~= 0 or (cmf * 256 + flg) % 31 ~= 0 or
-        checksum ~= h1 % 4294967296 then
-        return false, L('Account mismatch, import string does not apply to current account')
-    end
 
     if yieldImport then yieldImport() end
 
@@ -456,11 +442,7 @@ local function CheckDataIntegrity(str, h1, mode, yieldImport)
 
     if not decompressed then return false, decompressError or L("Failed integrity check") end
 
-    str = decompressed
-
-    if h1 % 4294967296 == addon.A32(str) then return true, str end
-
-    return false, L('Account mismatch, import string does not apply to current account')
+    return true, decompressed
 end
 
 local function CompressDeflate(str)
@@ -1404,7 +1386,6 @@ addon.guideImporter.gui = {
     progressMessage = nil,
     progressError = false
 }
-addon.guideImporter.lastBNetQuery = 0
 addon.guideImporter.cachedState = nil
 addon.guideImporter.importReady = false
 addon.guideImporter.importCoroutine = nil
